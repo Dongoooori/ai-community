@@ -47,7 +47,8 @@ interface FooterData {
 
 // API 데이터 가져오기
 async function getHeroData(): Promise<HeroData> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/hero`, {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+  const res = await fetch(`${baseUrl}/api/hero`, {
     cache: 'no-store',
     headers: {
       'Cache-Control': 'no-cache',
@@ -60,7 +61,8 @@ async function getHeroData(): Promise<HeroData> {
 }
 
 async function getLabsData(): Promise<LabData[]> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/labs`, {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+  const res = await fetch(`${baseUrl}/api/labs`, {
     cache: 'force-cache',
   });
   if (!res.ok) {
@@ -70,7 +72,8 @@ async function getLabsData(): Promise<LabData[]> {
 }
 
 async function getCommunityData(): Promise<CommunityData> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/community`, {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+  const res = await fetch(`${baseUrl}/api/community`, {
     cache: 'force-cache',
   });
   if (!res.ok) {
@@ -80,7 +83,8 @@ async function getCommunityData(): Promise<CommunityData> {
 }
 
 async function getFooterData(): Promise<FooterData> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/footer`, {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+  const res = await fetch(`${baseUrl}/api/footer`, {
     cache: 'force-cache',
   });
   if (!res.ok) {
