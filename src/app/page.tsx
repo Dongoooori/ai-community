@@ -45,52 +45,80 @@ interface FooterData {
   }>;
 }
 
-// API 데이터 가져오기
+// API 데이터 직접 가져오기 (서버 컴포넌트에서)
 async function getHeroData(): Promise<HeroData> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-  const res = await fetch(`${baseUrl}/api/hero`, {
-    cache: 'no-store',
-    headers: {
-      'Cache-Control': 'no-cache',
-    },
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch hero data');
-  }
-  return res.json();
+  return {
+    title: "Tokyo AI Community",
+    poster_url: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1920&h=1080&fit=crop&crop=center",
+    video_type: "mp4" as const,
+    video_url: process.env.HERO_VIDEO_URL || "",
+  };
 }
 
 async function getLabsData(): Promise<LabData[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-  const res = await fetch(`${baseUrl}/api/labs`, {
-    cache: 'force-cache',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch labs data');
-  }
-  return res.json();
+  return [
+    {
+      id: "1",
+      slug: "design",
+      title: "Design Lab",
+      description: "브랜드 아이덴티티, UI/UX, 생성형 도구까지 — AI가 디자인 워크플로를 혁신하는 방법을 배우고 직접 만들어봅니다.",
+      image_url: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=1920&h=1080&fit=crop&crop=center",
+      position: 1,
+    },
+    {
+      id: "2",
+      slug: "video",
+      title: "Video Lab",
+      description: "프리프로덕션부터 편집·자막·색보정 자동화까지 — AI가 영상 제작을 바꾸는 과정을 경험할 수 있습니다.",
+      image_url: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1920&h=1080&fit=crop&crop=center",
+      position: 2,
+    },
+    {
+      id: "3",
+      slug: "coding",
+      title: "Coding Lab",
+      description: "프로젝트 협업, 코드 리뷰, 자동화된 테스트까지 — 다양한 영역에서 AI가 개발 과정을 혁신하는 방법을 배우고 직접 경험할 수 있습니다.",
+      image_url: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1920&h=1080&fit=crop&crop=center",
+      position: 3,
+    },
+    {
+      id: "4",
+      slug: "robot",
+      title: "Robot Lab",
+      description: "센서 처리, 경로 계획, 자율 제어까지 — AI가 로봇을 똑똑하게 만드는 방법을 배우고 실제로 구동해봅니다.",
+      image_url: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1920&h=1080&fit=crop&crop=center",
+      position: 4,
+    },
+  ];
 }
 
 async function getCommunityData(): Promise<CommunityData> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-  const res = await fetch(`${baseUrl}/api/community`, {
-    cache: 'force-cache',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch community data');
-  }
-  return res.json();
+  return {
+    id: "1",
+    title: "협업 커뮤니티",
+    image_url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop&crop=center",
+    headline: "영상으로 연결된 작업실",
+    description: "온라인 커뮤니티를 통해 명확한 목표 설정, 정기적인 피드백, 협업 소프트웨어 활용, 유연한 작업 환경, 효과적인 커뮤니케이션 도구 활용이 가능함으로써 업무 생산성 향상을 목표로 하고 있습니다.",
+  };
 }
 
 async function getFooterData(): Promise<FooterData> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-  const res = await fetch(`${baseUrl}/api/footer`, {
-    cache: 'force-cache',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch footer data');
-  }
-  return res.json();
+  return {
+    brand: {
+      name: 'Tokyo AI Community',
+      description: 'AI 기술과 혁신을 위한 실험실',
+    },
+    laboratory: [
+      { label: 'AI Research Lab', href: '#ai-research' },
+      { label: 'Robotics Lab', href: '#robotics' },
+      { label: 'Data Science Lab', href: '#data-science' },
+    ],
+    social: [
+      { label: 'GitHub', href: 'https://github.com' },
+      { label: 'Twitter', href: 'https://twitter.com' },
+      { label: 'LinkedIn', href: 'https://linkedin.com' },
+    ],
+  };
 }
 
 export default async function Home() {

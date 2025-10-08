@@ -15,7 +15,6 @@ interface HeroVideoProps {
 }
 
 export default function HeroVideo({ data }: HeroVideoProps) {
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [showVideo, setShowVideo] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -24,7 +23,6 @@ export default function HeroVideo({ data }: HeroVideoProps) {
     if (!video) return;
 
     const handleCanPlay = () => {
-      setIsVideoLoaded(true);
       // 포스터 이미지에서 비디오로 페이드 전환
       setTimeout(() => {
         setShowVideo(true);
@@ -91,18 +89,6 @@ export default function HeroVideo({ data }: HeroVideoProps) {
 
       {/* 오버레이 그라데이션 */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
-
-      {/* 히어로 콘텐츠 */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center text-white px-4 max-w-4xl">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-            {data.title}
-          </h1>
-          <p className="text-lg md:text-xl lg:text-2xl opacity-90 max-w-2xl mx-auto">
-            AI 기술과 혁신을 위한 실험실
-          </p>
-        </div>
-      </div>
     </section>
   );
 }
