@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import poster from '../asset/hero.png';
 
 interface HeroData {
   title: string;
-  poster_url: string;
   video_type: 'mp4' | 'hls';
   video_url: string;
 }
@@ -80,7 +80,7 @@ export default function HeroVideo({ data }: HeroVideoProps) {
         }`}
       >
         <Image
-          src={data.poster_url}
+          src={poster}
           alt={data.title}
           fill
           className="object-cover"
@@ -101,7 +101,7 @@ export default function HeroVideo({ data }: HeroVideoProps) {
         loop
         playsInline
         preload="none"
-        poster={data.poster_url}
+        poster={poster.src}
       >
         {shouldLoadVideo && <source src={data.video_url} type="video/mp4" />}
       </video>

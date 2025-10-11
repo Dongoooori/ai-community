@@ -4,11 +4,11 @@ import SectionIntro from '@/components/SectionIntro';
 import LabSection from '@/components/LabSection';
 import CommunitySection from '@/components/CommunitySection';
 import Footer from '@/components/Footer';
+import NewsletterSection from '@/components/NewsletterSection';
 
 // API 데이터 타입 정의
 interface HeroData {
   title: string;
-  poster_url: string;
   video_type: 'mp4' | 'hls';
   video_url: string;
 }
@@ -45,11 +45,18 @@ interface FooterData {
   }>;
 }
 
+interface NewsletterData {
+  id: string;
+  title: string;
+  image_url: string;
+  headline: string;
+  description: string;
+}
+
 // API 데이터 직접 가져오기 (서버 컴포넌트에서)
 async function getHeroData(): Promise<HeroData> {
   return {
     title: "Tokyo AI Community",
-    poster_url: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1920&h=1080&fit=crop&crop=center",
     video_type: "mp4" as const,
     // public 폴더의 비디오 사용 (Vercel CDN 자동 적용)
     video_url: "/hero-video.mp4",
@@ -92,7 +99,6 @@ async function getLabsData(): Promise<LabData[]> {
     },
   ];
 }
-
 async function getCommunityData(): Promise<CommunityData> {
   return {
     id: "1",
@@ -100,6 +106,15 @@ async function getCommunityData(): Promise<CommunityData> {
     image_url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop&crop=center",
     headline: "영상으로 연결된 작업실",
     description: "온라인 커뮤니티를 통해 명확한 목표 설정, 정기적인 피드백, 협업 소프트웨어 활용, 유연한 작업 환경, 효과적인 커뮤니케이션 도구 활용이 가능함으로써 업무 생산성 향상을 목표로 하고 있습니다.",
+  };
+}
+async function getNewsletterData(): Promise<NewsletterData> {
+  return {
+    id: "1",
+    title: "뉴스레터",
+    image_url: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1920&h=1080&fit=crop&crop=center",
+    headline: "AI 소식지",
+    description: "로그인하시면 인공지능(AI)에 관한 다양한 뉴스레터를 자유롭게 읽어보실 수 있습니다. 최신 기술 트렌드부터 실생활 활용 사례까지 폭넓은 내용을 만나보세요.",
   };
 }
 
@@ -124,10 +139,11 @@ async function getFooterData(): Promise<FooterData> {
 
 export default async function Home() {
   // 모든 데이터를 병렬로 가져오기
-  const [heroData, labsData, communityData, footerData] = await Promise.all([
+  const [heroData, labsData, communityData, newsletterData, footerData] = await Promise.all([
     getHeroData(),
     getLabsData(),
     getCommunityData(),
+    getNewsletterData(),
     getFooterData(),
   ]);
 
@@ -156,6 +172,11 @@ export default async function Home() {
         <CommunitySection data={communityData} />
       </div>
       
+      {/* 뉴스레터 소개  섹션 */}
+      <div className="mt-40">
+        <NewsletterSection data={newsletterData} />
+      </div>
+
       {/* 푸터 */}
       <Footer data={footerData} />
     </div>

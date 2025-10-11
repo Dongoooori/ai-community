@@ -2,15 +2,42 @@
 
 import { Button } from '@/components/ui/button';
 import useScroll from '@/hooks/useScroll';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { useState, useRef, useEffect } from 'react';
 
 export default function Header() {
-
   const { completion, isScrolled } = useScroll();
+  const router = useRouter();
+  const { data: session } = useSession();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogoClick = () => {
     window.location.reload();
   };
 
+  const handleLogin = () => {
+    router.push('/auth/signin');
+  };
+
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -35,14 +62,62 @@ export default function Header() {
             Tokyo AI Community
           </h1>
 
-          {/* 로그인 버튼 */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-transparent border-border hover:bg-accent px-4 cursor-pointer"
-          >
-            Login
-          </Button>
+          {/* 로그인 상태에 따라 다른 UI */}
+          {session ? (
+            <div className="relative" ref={dropdownRef}>
+              {/* 사용자 아바타 */}
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                aria-label="사용자 메뉴"
+              >
+                <Image
+                  src={session.user?.image || '/default-avatar.png'}
+                  alt={session.user?.name || 'User'}
+                  width={36}
+                  height={36}
+                  className="rounded-full"
+                />
+              </button>
+
+              {/* 드롭다운 메뉴 */}
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+                  {/* 사용자 정보 */}
+                  <div className="px-4 py-3 border-b border-border">
+                    <p className="text-sm font-medium text-foreground">
+                      {session.user?.name || '사용자'}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {session.user?.email}
+                    </p>
+                  </div>
+
+                  {/* 메뉴 아이템 */}
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        router.push('/auth/signout');
+                        setIsDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                    >
+                      로그아웃
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-transparent border-border hover:bg-accent px-4 cursor-pointer"
+              onClick={handleLogin}
+            >
+              Login
+            </Button>
+          )}
         </div>
       </div>
       <span 
