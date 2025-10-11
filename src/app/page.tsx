@@ -51,7 +51,8 @@ async function getHeroData(): Promise<HeroData> {
     title: "Tokyo AI Community",
     poster_url: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1920&h=1080&fit=crop&crop=center",
     video_type: "mp4" as const,
-    video_url: process.env.HERO_VIDEO_URL || "",
+    // public 폴더의 비디오 사용 (Vercel CDN 자동 적용)
+    video_url: "/hero-video.mp4",
   };
 }
 

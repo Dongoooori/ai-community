@@ -16,9 +16,34 @@ interface HeroVideoProps {
 
 export default function HeroVideo({ data }: HeroVideoProps) {
   const [showVideo, setShowVideo] = useState(true);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Intersection Observer로 화면에 보일 때만 비디오 로드
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldLoadVideo(true);
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
+    if (!shouldLoadVideo) return;
+    
     const video = videoRef.current;
     if (!video) return;
 
@@ -33,13 +58,8 @@ export default function HeroVideo({ data }: HeroVideoProps) {
       console.error('비디오 로드 실패:', e);
     };
 
-    const handleLoadStart = () => {
-      console.log('비디오 로딩 시작:', data.video_url);
-    };
-
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('error', handleError);
-    video.addEventListener('loadstart', handleLoadStart);
 
     // 비디오 URL이 변경되면 강제로 새로 로드
     video.src = data.video_url;
@@ -48,12 +68,11 @@ export default function HeroVideo({ data }: HeroVideoProps) {
     return () => {
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('error', handleError);
-      video.removeEventListener('loadstart', handleLoadStart);
     };
-  }, [data.video_url]);
+  }, [data.video_url, shouldLoadVideo]);
 
   return (
-    <section className="relative w-full h-screen overflow-hidden">
+    <section ref={sectionRef} className="relative w-full h-screen overflow-hidden">
       {/* 포스터 이미지 */}
       <div
         className={`absolute inset-0 transition-opacity duration-1000 ${
@@ -67,10 +86,11 @@ export default function HeroVideo({ data }: HeroVideoProps) {
           className="object-cover"
           priority
           sizes="100vw"
+          quality={85}
         />
       </div>
 
-      {/* 비디오 */}
+      {/* 비디오 - 화면에 보일 때만 로드 */}
       <video
         ref={videoRef}
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
@@ -80,11 +100,10 @@ export default function HeroVideo({ data }: HeroVideoProps) {
         muted
         loop
         playsInline
-        preload="metadata"
+        preload="none"
         poster={data.poster_url}
       >
-        <source src={data.video_url} type="video/mp4" />
-        브라우저가 비디오를 지원하지 않습니다.
+        {shouldLoadVideo && <source src={data.video_url} type="video/mp4" />}
       </video>
 
       {/* 오버레이 그라데이션 */}
