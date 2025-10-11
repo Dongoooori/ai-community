@@ -70,7 +70,7 @@ async function getLabsData(): Promise<LabData[]> {
       slug: "design",
       title: "Design Lab",
       description: "브랜드 아이덴티티, UI/UX, 생성형 도구까지 — AI가 디자인 워크플로를 혁신하는 방법을 배우고 직접 만들어봅니다.",
-      image_url: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=1920&h=1080&fit=crop&crop=center",
+      image_url: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=1200&h=675&q=75&fm=webp&fit=crop&crop=center",
       position: 1,
     },
     {
@@ -78,7 +78,7 @@ async function getLabsData(): Promise<LabData[]> {
       slug: "video",
       title: "Video Lab",
       description: "프리프로덕션부터 편집·자막·색보정 자동화까지 — AI가 영상 제작을 바꾸는 과정을 경험할 수 있습니다.",
-      image_url: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1920&h=1080&fit=crop&crop=center",
+      image_url: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1200&h=675&q=75&fm=webp&fit=crop&crop=center",
       position: 2,
     },
     {
@@ -86,7 +86,7 @@ async function getLabsData(): Promise<LabData[]> {
       slug: "coding",
       title: "Coding Lab",
       description: "프로젝트 협업, 코드 리뷰, 자동화된 테스트까지 — 다양한 영역에서 AI가 개발 과정을 혁신하는 방법을 배우고 직접 경험할 수 있습니다.",
-      image_url: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1920&h=1080&fit=crop&crop=center",
+      image_url: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=675&q=75&fm=webp&fit=crop&crop=center",
       position: 3,
     },
     {
@@ -94,7 +94,7 @@ async function getLabsData(): Promise<LabData[]> {
       slug: "robot",
       title: "Robot Lab",
       description: "센서 처리, 경로 계획, 자율 제어까지 — AI가 로봇을 똑똑하게 만드는 방법을 배우고 실제로 구동해봅니다.",
-      image_url: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1920&h=1080&fit=crop&crop=center",
+      image_url: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1200&h=675&q=75&fm=webp&fit=crop&crop=center",
       position: 4,
     },
   ];
@@ -103,7 +103,7 @@ async function getCommunityData(): Promise<CommunityData> {
   return {
     id: "1",
     title: "협업 커뮤니티",
-    image_url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&h=1080&fit=crop&crop=center",
+    image_url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=675&q=75&fm=webp&fit=crop&crop=center",
     headline: "영상으로 연결된 작업실",
     description: "온라인 커뮤니티를 통해 명확한 목표 설정, 정기적인 피드백, 협업 소프트웨어 활용, 유연한 작업 환경, 효과적인 커뮤니케이션 도구 활용이 가능함으로써 업무 생산성 향상을 목표로 하고 있습니다.",
   };
@@ -112,7 +112,7 @@ async function getNewsletterData(): Promise<NewsletterData> {
   return {
     id: "1",
     title: "뉴스레터",
-    image_url: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1920&h=1080&fit=crop&crop=center",
+    image_url: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&h=675&q=75&fm=webp&fit=crop&crop=center",
     headline: "AI 소식지",
     description: "로그인하시면 인공지능(AI)에 관한 다양한 뉴스레터를 자유롭게 읽어보실 수 있습니다. 최신 기술 트렌드부터 실생활 활용 사례까지 폭넓은 내용을 만나보세요.",
   };
