@@ -5,7 +5,7 @@ import useScroll from '@/hooks/useScroll';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 export default function Header() {
   const { completion, isScrolled } = useScroll();
@@ -14,13 +14,21 @@ export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleLogoClick = () => {
-    window.location.reload();
-  };
+  const handleLogoClick = useCallback(() => {
+    if(session) {
+      router.push('/home');
+    } else {
+      router.push('/');
+    }
+  }, [router, session]);
 
-  const handleLogin = () => {
-    router.push('/auth/signin');
-  };
+  const handleLogin = useCallback(() => {
+    if(session) {
+      router.push('/home');
+    } else {
+      router.push('/auth/signin');
+    }
+  }, [router, session]);
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {

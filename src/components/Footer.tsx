@@ -2,37 +2,35 @@
 
 import Link from 'next/link';
 
-interface FooterData {
+const footerData = {
   brand: {
-    name: string;
-    description: string;
-  };
-  laboratory: Array<{
-    label: string;
-    href: string;
-  }>;
-  social: Array<{
-    label: string;
-    href: string;
-  }>;
+    name: 'Tokyo AI Community',
+    description: 'AI 기술과 혁신을 위한 실험실',
+  },
+  laboratory: [
+    { label: 'AI Research Lab', href: '#ai-research' },
+    { label: 'Robotics Lab', href: '#robotics' },
+    { label: 'Data Science Lab', href: '#data-science' },
+  ],
+  social: [
+    { label: 'GitHub', href: 'https://github.com' },
+    { label: 'Twitter', href: 'https://twitter.com' },
+    { label: 'LinkedIn', href: 'https://linkedin.com' },
+  ],
 }
 
-interface FooterProps {
-  data: FooterData;
-}
-
-export default function Footer({ data }: FooterProps) {
+export default function Footer() {
   return (
-    <footer className="bg-card border-t border-border">
+    <footer className="w-full h-full bg-card border-t border-border">
       <div className="w-full px-4 py-12">
         <div className="flex gap-20">
           {/* 브랜드 섹션 */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground">
-              {data.brand.name}
+              {footerData.brand.name}
             </h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              {data.brand.description}
+              {footerData.brand.description}
             </p>
           </div>
 
@@ -42,7 +40,7 @@ export default function Footer({ data }: FooterProps) {
               Laboratory
             </h3>
             <ul className="space-y-2">
-              {data.laboratory.map((lab) => (
+              {footerData.laboratory.map((lab) => (
                 <li key={lab.href}>
                   <Link
                     href={lab.href}
@@ -61,7 +59,7 @@ export default function Footer({ data }: FooterProps) {
               Follow Us
             </h3>
             <ul className="space-y-2">
-              {data.social.map((social) => (
+              {footerData.social.map((social) => (
                 <li key={social.href}>
                   <Link
                     href={social.href}

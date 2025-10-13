@@ -5,6 +5,7 @@ import LabSection from '@/components/LabSection';
 import CommunitySection from '@/components/CommunitySection';
 import Footer from '@/components/Footer';
 import NewsletterSection from '@/components/NewsletterSection';
+import Layout from '@/components/Layout';
 
 // API 데이터 타입 정의
 interface HeroData {
@@ -28,21 +29,6 @@ interface CommunityData {
   image_url: string;
   headline: string;
   description: string;
-}
-
-interface FooterData {
-  brand: {
-    name: string;
-    description: string;
-  };
-  laboratory: Array<{
-    label: string;
-    href: string;
-  }>;
-  social: Array<{
-    label: string;
-    href: string;
-  }>;
 }
 
 interface NewsletterData {
@@ -118,42 +104,21 @@ async function getNewsletterData(): Promise<NewsletterData> {
   };
 }
 
-async function getFooterData(): Promise<FooterData> {
-  return {
-    brand: {
-      name: 'Tokyo AI Community',
-      description: 'AI 기술과 혁신을 위한 실험실',
-    },
-    laboratory: [
-      { label: 'AI Research Lab', href: '#ai-research' },
-      { label: 'Robotics Lab', href: '#robotics' },
-      { label: 'Data Science Lab', href: '#data-science' },
-    ],
-    social: [
-      { label: 'GitHub', href: 'https://github.com' },
-      { label: 'Twitter', href: 'https://twitter.com' },
-      { label: 'LinkedIn', href: 'https://linkedin.com' },
-    ],
-  };
-}
-
 export default async function Home() {
   // 모든 데이터를 병렬로 가져오기
-  const [heroData, labsData, communityData, newsletterData, footerData] = await Promise.all([
+  const [heroData, labsData, communityData, newsletterData] = await Promise.all([
     getHeroData(),
     getLabsData(),
     getCommunityData(),
     getNewsletterData(),
-    getFooterData(),
   ]);
 
   // 실험실 데이터를 position 순으로 정렬
   const sortedLabsData = labsData.sort((a, b) => a.position - b.position);
 
   return (
-    <div className="min-h-screen">
-      <Header />
-      
+    <Layout className="min-h-screen">
+
       {/* 히어로 섹션 */}
       <HeroVideo data={heroData} />
       
@@ -177,8 +142,6 @@ export default async function Home() {
         <NewsletterSection data={newsletterData} />
       </div>
 
-      {/* 푸터 */}
-      <Footer data={footerData} />
-    </div>
+    </Layout>
   );
 }

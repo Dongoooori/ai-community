@@ -55,12 +55,12 @@ const handler = NextAuth({
   callbacks: {
     async redirect({ url, baseUrl }) {
       // 로그인 후 리다이렉트 처리
-      // 상대 경로면 baseUrl 추가
+      // callbackUrl이 명시되어 있으면 해당 URL로 이동
       if (url.startsWith("/")) return `${baseUrl}${url}`
       // 같은 도메인이면 허용
       else if (new URL(url).origin === baseUrl) return url
-      // 그 외에는 홈으로
-      return baseUrl
+      // 그 외에는 /home으로
+      return `${baseUrl}/home`
     },
     async jwt({ token, user }) {
       // 로그인 직후 user 정보를 token에 저장

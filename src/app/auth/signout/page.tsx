@@ -1,19 +1,19 @@
 "use client"
 import { signOut, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useCallback, useEffect } from "react"
 
 export default function SignOut() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
-  const handleSignOut = () => {
+  const handleSignOut = useCallback(() => {
     signOut({ callbackUrl: "/" })
-  }
+  }, [])
 
-  const handleCancel = () => {
-    router.push('/')
-  }
+  const handleCancel = useCallback(() => {
+    router.push('/home')
+  }, [router])
 
   // 로그인되지 않은 경우 메인 페이지로 리디렉션
   useEffect(() => {
@@ -37,18 +37,12 @@ export default function SignOut() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-black">
       <div className="max-w-md w-full space-y-8 p-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
             로그아웃
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            정말로 로그아웃하시겠습니까?
-          </p>
-          <p className="mt-1 text-center text-sm text-gray-500">
-            {session.user?.email}
-          </p>
         </div>
         <div className="mt-8 space-y-4">
           <button
