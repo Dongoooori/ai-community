@@ -1,11 +1,12 @@
-import Header from '@/components/Header';
+'use client';
+
 import HeroVideo from '@/components/HeroVideo';
 import SectionIntro from '@/components/SectionIntro';
 import LabSection from '@/components/LabSection';
 import CommunitySection from '@/components/CommunitySection';
-import Footer from '@/components/Footer';
 import NewsletterSection from '@/components/NewsletterSection';
 import Layout from '@/components/Layout';
+import AuthRedirect from '@/components/AuthRedirect';
 
 // API 데이터 타입 정의
 interface HeroData {
@@ -39,17 +40,16 @@ interface NewsletterData {
   description: string;
 }
 
-// API 데이터 직접 가져오기 (서버 컴포넌트에서)
-async function getHeroData(): Promise<HeroData> {
+// 정적 데이터 (빌드 타임에 결정)
+function getHeroData(): HeroData {
   return {
     title: "Tokyo AI Community",
     video_type: "mp4" as const,
-    // public 폴더의 비디오 사용 (Vercel CDN 자동 적용)
     video_url: "/hero-video.mp4",
   };
 }
 
-async function getLabsData(): Promise<LabData[]> {
+function getLabsData(): LabData[] {
   return [
     {
       id: "1",
@@ -85,7 +85,8 @@ async function getLabsData(): Promise<LabData[]> {
     },
   ];
 }
-async function getCommunityData(): Promise<CommunityData> {
+
+function getCommunityData(): CommunityData {
   return {
     id: "1",
     title: "협업 커뮤니티",
@@ -94,7 +95,8 @@ async function getCommunityData(): Promise<CommunityData> {
     description: "온라인 커뮤니티를 통해 명확한 목표 설정, 정기적인 피드백, 협업 소프트웨어 활용, 유연한 작업 환경, 효과적인 커뮤니케이션 도구 활용이 가능함으로써 업무 생산성 향상을 목표로 하고 있습니다.",
   };
 }
-async function getNewsletterData(): Promise<NewsletterData> {
+
+function getNewsletterData(): NewsletterData {
   return {
     id: "1",
     title: "뉴스레터",
@@ -104,44 +106,46 @@ async function getNewsletterData(): Promise<NewsletterData> {
   };
 }
 
-export default async function Home() {
-  // 모든 데이터를 병렬로 가져오기
-  const [heroData, labsData, communityData, newsletterData] = await Promise.all([
-    getHeroData(),
-    getLabsData(),
-    getCommunityData(),
-    getNewsletterData(),
-  ]);
+// SSG로 생성 (정적 페이지)
+export default function Home() {
+  // 데이터 가져오기 (빌드 타임)
+  const heroData = getHeroData();
+  const labsData = getLabsData();
+  const communityData = getCommunityData();
+  const newsletterData = getNewsletterData();
 
   // 실험실 데이터를 position 순으로 정렬
   const sortedLabsData = labsData.sort((a, b) => a.position - b.position);
 
   return (
-    <Layout className="min-h-screen">
-
-      {/* 히어로 섹션 */}
-      <HeroVideo data={heroData} />
+    <>
+      {/* 클라이언트에서 로그인 체크 후 리다이렉트 */}
+      <AuthRedirect />
       
-      {/* 소개 섹션 */}
-      <SectionIntro />
-      
-      {/* 실험실 섹션들 */}
-      <div className="mt-40">
-        {sortedLabsData.map((lab) => (
-          <LabSection key={lab.id} data={lab} />
-        ))}
-      </div>
-      
-      {/* 협업 커뮤니티 섹션 */}
-      <div className="mt-40">
-        <CommunitySection data={communityData} />
-      </div>
-      
-      {/* 뉴스레터 소개  섹션 */}
-      <div className="mt-40">
-        <NewsletterSection data={newsletterData} />
-      </div>
-
-    </Layout>
+      <Layout className="min-h-screen">
+        {/* 히어로 섹션 */}
+        <HeroVideo data={heroData} />
+        
+        {/* 소개 섹션 */}
+        <SectionIntro />
+        
+        {/* 실험실 섹션들 */}
+        <div className="mt-40">
+          {sortedLabsData.map((lab) => (
+            <LabSection key={lab.id} data={lab} />
+          ))}
+        </div>
+        
+        {/* 협업 커뮤니티 섹션 */}
+        <div className="mt-40">
+          <CommunitySection data={communityData} />
+        </div>
+        
+        {/* 뉴스레터 소개 섹션 */}
+        <div className="mt-40">
+          <NewsletterSection data={newsletterData} />
+        </div>
+      </Layout>
+    </>
   );
 }

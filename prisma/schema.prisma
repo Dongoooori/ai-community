@@ -36,13 +36,17 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String       @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?      @unique
   emailVerified DateTime?
   image         String?
+  role          Role         @default(USER)
   accounts      Account[]
   sessions      Session[]
+  newsletters   Newsletter[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
 
 model VerificationToken {
@@ -51,4 +55,28 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// 뉴스레터 모델
+model Newsletter {
+  id          String    @id @default(cuid())
+  title       String
+  content     String    @db.Text
+  thumbnail   String?
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId    String
+  published   Boolean   @default(false)
+  views       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  @@index([published, publishedAt])
+  @@index([authorId])
+}
+
+// 사용자 역할
+enum Role {
+  USER
+  ADMIN
 }

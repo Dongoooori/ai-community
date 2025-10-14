@@ -1,8 +1,11 @@
-import NextAuth from "next-auth"
+import NextAuth, { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
+import { PrismaAdapter } from "@auth/prisma-adapter"
+import { prisma } from "@/lib/prisma"
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -21,11 +24,27 @@ const handler = NextAuth({
             async authorize(credentials) {
               // 개발 환경에서만 작동하는 테스트 로그인
               if (credentials?.email && credentials?.name) {
+                // Prisma에서 사용자 찾기 또는 생성
+                let user = await prisma.user.findUnique({
+                  where: { email: credentials.email },
+                })
+
+                if (!user) {
+                  user = await prisma.user.create({
+                    data: {
+                      email: credentials.email,
+                      name: credentials.name,
+                      image: `https://ui-avatars.com/api/?name=${encodeURIComponent(credentials.name)}&background=random`,
+                      role: "USER",
+                    },
+                  })
+                }
+
                 return {
-                  id: "test-user-" + Date.now(),
-                  email: credentials.email,
-                  name: credentials.name,
-                  image: `https://ui-avatars.com/api/?name=${encodeURIComponent(credentials.name)}&background=random`,
+                  id: user.id,
+                  email: user.email,
+                  name: user.name,
+                  image: user.image,
                 }
               }
               return null
@@ -69,13 +88,21 @@ const handler = NextAuth({
         token.email = user.email
         token.name = user.name
         token.picture = user.image
+        
+        // DB에서 role 가져오기
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email as string },
+          select: { role: true },
+        })
+        token.role = dbUser?.role || "USER"
       }
       return token
     },
     async session({ session, token }) {
       // token의 정보를 session에 전달
       if (token && session.user) {
-        (session.user as { id?: string }).id = token.id as string
+        (session.user as { id?: string; role?: string }).id = token.id as string
+        (session.user as { id?: string; role?: string }).role = token.role as string
         session.user.email = token.email as string | null | undefined
         session.user.name = token.name as string | null | undefined
         session.user.image = token.picture as string | null | undefined
@@ -85,7 +112,9 @@ const handler = NextAuth({
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development",
-})
+}
+
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST }
 

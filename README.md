@@ -10,29 +10,39 @@
 - **Framer Motion** (애니메이션)
 - **shadcn/ui** (UI 컴포넌트)
 - **Intersection Observer** (스크롤 애니메이션)
+- **Prisma** (ORM)
+- **PostgreSQL** (데이터베이스)
+- **NextAuth.js** (인증)
+- **Vercel Blob** (이미지 스토리지)
 
 ## 📁 프로젝트 구조
 
 ```
 src/
 ├── app/
-│   ├── api/           # API 라우트
-│   │   ├── hero/      # 히어로 섹션 데이터
-│   │   ├── labs/      # 실험실 데이터
-│   │   ├── community/ # 커뮤니티 데이터
-│   │   └── footer/    # 푸터 데이터
-│   ├── layout.tsx     # 루트 레이아웃
-│   └── page.tsx       # 메인 페이지
-├── components/        # React 컴포넌트
-│   ├── ui/           # shadcn/ui 컴포넌트
-│   ├── Header.tsx    # 헤더 컴포넌트
-│   ├── HeroVideo.tsx # 히어로 비디오 섹션
-│   ├── SectionIntro.tsx # 소개 섹션
-│   ├── LabSection.tsx # 실험실 섹션
-│   ├── CommunitySection.tsx # 커뮤니티 섹션
-│   └── Footer.tsx    # 푸터 컴포넌트
-└── hooks/
-    └── useInViewOnce.ts # 스크롤 애니메이션 훅
+│   ├── api/                    # API 라우트
+│   │   ├── auth/              # NextAuth 인증
+│   │   ├── newsletters/       # 뉴스레터 공개 API
+│   │   └── admin/             # 관리자 API
+│   │       ├── newsletters/   # 뉴스레터 CRUD
+│   │       └── upload-image/  # 이미지 업로드
+│   ├── home/                  # 로그인 후 홈
+│   │   └── newsletter/[id]/   # 뉴스레터 상세
+│   ├── admin/                 # 관리자 페이지
+│   │   └── newsletter/        # 뉴스레터 관리
+│   ├── auth/                  # 인증 페이지
+│   ├── layout.tsx             # 루트 레이아웃
+│   └── page.tsx               # 랜딩 페이지
+├── components/                # React 컴포넌트
+│   ├── ui/                    # shadcn/ui 컴포넌트
+│   ├── Layout/                # 레이아웃 컴포넌트
+│   ├── NewsletterEditor.tsx   # 뉴스레터 에디터
+│   └── ...                    # 기타 컴포넌트
+├── lib/                       # 유틸리티
+│   ├── prisma.ts              # Prisma 클라이언트
+│   └── auth-utils.ts          # 인증 헬퍼
+└── hooks/                     # 커스텀 훅
+    └── useInViewOnce.ts       # 스크롤 애니메이션
 ```
 
 ## 🎨 주요 기능
@@ -71,6 +81,24 @@ src/
 - 실험실 링크
 - 소셜 미디어 링크
 
+### 7. 뉴스레터 시스템 ⭐ NEW
+- **사용자 기능**
+  - 뉴스레터 목록 (카드 그리드)
+  - 상세 페이지 (마크다운 렌더링)
+  - 조회수 자동 증가
+  - 페이지네이션
+- **관리자 기능**
+  - 뉴스레터 작성/수정/삭제
+  - 이미지 업로드 (Vercel Blob)
+  - 발행/비공개 관리
+  - 임시 저장 기능
+
+### 8. 인증 시스템
+- Google OAuth 로그인
+- 테스트 로그인 (개발 환경)
+- 권한 관리 (USER/ADMIN)
+- 세션 기반 인증
+
 ## 🎬 애니메이션
 
 - **Framer Motion** variants 사용
@@ -88,6 +116,34 @@ src/
 
 ## 🔧 개발 환경 설정
 
+### 1. 환경 변수 설정
+
+`.env` 파일 생성:
+
+```bash
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+NEXTAUTH_URL="http://localhost:4000"
+NEXTAUTH_SECRET="your-secret-key"
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+BLOB_READ_WRITE_TOKEN="your-vercel-blob-token"
+```
+
+### 2. 데이터베이스 설정
+
+```bash
+# Prisma 클라이언트 생성
+npm run prisma:generate
+
+# 마이그레이션 실행
+npm run prisma:migrate
+
+# Prisma Studio 실행 (DB 관리)
+npm run prisma:studio
+```
+
+### 3. 개발 서버 실행
+
 ```bash
 # 의존성 설치
 npm install
@@ -102,12 +158,25 @@ npm run build
 npm start
 ```
 
+### 4. 관리자 계정 생성
+
+Prisma Studio에서 User 테이블의 `role`을 `ADMIN`으로 변경
+
+**자세한 설정 가이드는 [NEWSLETTER_SETUP.md](./NEWSLETTER_SETUP.md)를 참고하세요.**
+
 ## 🌐 API 엔드포인트
 
-- `GET /api/hero` - 히어로 섹션 데이터
-- `GET /api/labs` - 실험실 목록
-- `GET /api/community` - 커뮤니티 정보
-- `GET /api/footer` - 푸터 데이터
+### 공개 API
+- `GET /api/newsletters` - 발행된 뉴스레터 목록
+- `GET /api/newsletters/[id]` - 개별 뉴스레터 조회
+
+### 관리자 API (인증 필요)
+- `GET /api/admin/newsletters` - 모든 뉴스레터 목록
+- `POST /api/admin/newsletters` - 뉴스레터 생성
+- `PUT /api/admin/newsletters/[id]` - 뉴스레터 수정
+- `DELETE /api/admin/newsletters/[id]` - 뉴스레터 삭제
+- `PATCH /api/admin/newsletters/[id]/publish` - 발행/비공개 토글
+- `POST /api/admin/upload-image` - 이미지 업로드
 
 ## 🎯 성능 최적화
 
@@ -125,13 +194,21 @@ npm start
 - 색상 대비 준수
 - 의미론적 HTML
 
-## 🔮 백엔드 연동
+## 🗄️ 데이터베이스 스키마
 
-현재는 더미 데이터를 사용하지만, 실제 운영 시에는:
+### User
+- id, email, name, image
+- **role** (USER/ADMIN)
+- newsletters (관계)
 
-1. **Supabase** (Postgres + Storage)
-2. **Mux/Cloudflare Stream** (비디오 스트리밍)
-3. **관리자 대시보드** (콘텐츠 관리)
+### Newsletter
+- id, title, content, thumbnail
+- published, views
+- authorId (User 관계)
+- publishedAt, createdAt, updatedAt
+
+### NextAuth Tables
+- Account, Session, VerificationToken
 
 ## 📄 라이선스
 
