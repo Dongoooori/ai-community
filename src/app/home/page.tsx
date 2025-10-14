@@ -28,6 +28,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   // 로그인하지 않은 사용자는 로그인 페이지로 리다이렉트
   useEffect(() => {
@@ -42,7 +43,21 @@ export default function HomePage() {
       fetchNewsletters();
     }
   }, [status, page]);
-  console.log(totalPages)
+
+  // 현재 뉴스레터 인덱스가 변경될 때 페이지 로드
+  useEffect(() => {
+    if (newsletters.length > 0 && currentIndex >= newsletters.length) {
+      // 현재 페이지의 마지막 뉴스레터에 도달하면 다음 페이지 로드
+      if (page < totalPages) {
+        setPage(page + 1);
+        setCurrentIndex(0);
+      } else {
+        // 마지막 페이지의 마지막 뉴스레터면 첫 번째로 돌아가기
+        setCurrentIndex(0);
+      }
+    }
+  }, [currentIndex, newsletters.length, page, totalPages]);
+
 
   const fetchNewsletters = async () => {
     try {
@@ -53,12 +68,33 @@ export default function HomePage() {
       const data = await response.json();
       console.log(data)
       setNewsletters(data.newsletters);
-      setTotalPages(data.newsletters.length);
+      setTotalPages(data.pagination.totalPages);
+      setCurrentIndex(0); // 새 페이지 로드 시 인덱스 리셋
     } catch (error) {
       console.error('Error fetching newsletters:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // 네비게이션 함수들
+  const goToPrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    } else if (page > 1) {
+      // 현재 페이지의 첫 번째 뉴스레터면 이전 페이지로
+      setPage(page - 1);
+    }
+  };
+
+  const goToNext = () => {
+    if (currentIndex < newsletters.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else if (page < totalPages) {
+      // 현재 페이지의 마지막 뉴스레터면 다음 페이지로
+      setPage(page + 1);
+    }
+    // 마지막 페이지의 마지막 뉴스레터면 아무것도 하지 않음
   };
 
   // 로딩 중일 때
@@ -107,27 +143,27 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              {/* 현재 뉴스레터 (첫 번째) */}
-              {newsletters.length > 0 && (
+              {/* 현재 뉴스레터 */}
+              {newsletters.length > 0 && newsletters[currentIndex] && (
                 <div className="space-y-6 flex flex-col">
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
-                    {newsletters[0].title}
+                    {newsletters[currentIndex].title}
                   </h1>
                   <p className="text-lg md:text-xl text-white/90 leading-relaxed">
-                    {getPreview(newsletters[0].content)}
+                    {getPreview(newsletters[currentIndex].content)}
                   </p>
                   
                   {/* 메타 정보 */}
                   <div className="flex justify-between gap-4 text-white/80 space-y-4">
                     <div className='h-full flex items-center'>
-                      <Button className="cursor-pointer" variant="emerald" onClick={() => router.push(`/home/newsletter/${newsletters[0].id}`)}>
+                      <Button className="cursor-pointer" variant="emerald" onClick={() => router.push(`/home/newsletter/${newsletters[currentIndex].id}`)}>
                         뉴스레터 더보기
                       </Button>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span>조회수 {newsletters[0].views}</span>
+                      <span>조회수 {newsletters[currentIndex].views}</span>
                       <span>
-                        발행일 {new Date(newsletters[0].publishedAt).toLocaleDateString('ko-KR', {
+                        발행일 {new Date(newsletters[currentIndex].publishedAt).toLocaleDateString('ko-KR', {
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric',
@@ -144,25 +180,25 @@ export default function HomePage() {
         {/* 페이지네이션 - 우상단 */}
         {newsletters.length > 0 && (
           <div className="absolute top-30 right-20 text-white z-20 text-center">
-            <span className="text-6xl"> {page}</span>
-            <span className="text-2xl"> / {totalPages}</span>
+            <span className="text-6xl"> {currentIndex + 1}</span>
+            <span className="text-2xl"> / {newsletters.length}</span>
           </div>
         )}
 
         {/* 네비게이션 버튼 - 우하단 */}
-        {newsletters.length > 0 && totalPages > 1 && (
+        {newsletters.length > 0 && (
           <div className="absolute bottom-8 right-8 flex gap-4 z-20">
             <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="w-12 h-12 bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 rounded-full flex items-center justify-center text-white text-xl"
+              onClick={goToPrevious}
+              disabled={page === 1 && currentIndex === 0}
+              className="w-12 h-12 bg-white/20 hover:bg-white/30 disabled:opacity-50 cursor-pointer disabled:cursor-default disabled:hover:bg-white/20 transition-all duration-300 rounded-full flex items-center justify-center text-white text-xl"
             >
               ‹
             </button>
             <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="w-12 h-12 bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 rounded-full flex items-center justify-center text-white text-xl"
+              onClick={goToNext}
+              disabled={page === totalPages && currentIndex === newsletters.length - 1}
+              className="w-12 h-12 bg-white/20 hover:bg-white/30 disabled:opacity-50 cursor-pointer disabled:cursor-default disabled:hover:bg-white/20 transition-all duration-300 rounded-full flex items-center justify-center text-white text-xl"
             >
               ›
             </button>
