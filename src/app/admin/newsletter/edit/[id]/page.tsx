@@ -2,7 +2,7 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import NewsletterEditor from '@/components/NewsletterEditor';
 import Header from '@/components/Header';
 
@@ -10,21 +10,16 @@ export default function EditNewsletterPage() {
   const router = useRouter();
   const params = useParams();
   const { data: session, status } = useSession();
-  const [newsletter, setNewsletter] = useState<any>(null);
+  const [newsletter, setNewsletter] = useState<{
+    id: string;
+    title: string;
+    content: string;
+    thumbnail?: string;
+    published: boolean;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
-      return;
-    }
-
-    if (status === 'authenticated') {
-      fetchNewsletter();
-    }
-  }, [status, router]);
-
-  const fetchNewsletter = async () => {
+  const fetchNewsletter = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/newsletters/${params.id}`);
       if (!response.ok) {
@@ -39,7 +34,18 @@ export default function EditNewsletterPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, router]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+      return;
+    }
+
+    if (status === 'authenticated') {
+      fetchNewsletter();
+    }
+  }, [status, router, fetchNewsletter]);
 
   const handleSave = async (data: { title: string; content: string; thumbnail?: string; published: boolean }) => {
     const response = await fetch(`/api/admin/newsletters/${params.id}`, {

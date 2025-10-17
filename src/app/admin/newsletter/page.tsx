@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Image from 'next/image';
@@ -29,18 +29,7 @@ export default function AdminNewsletterPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
-      return;
-    }
-
-    if (status === 'authenticated') {
-      fetchNewsletters();
-    }
-  }, [status, page, router]);
-
-  const fetchNewsletters = async () => {
+  const fetchNewsletters = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/newsletters?page=${page}&limit=20`);
       if (!response.ok) {
@@ -55,7 +44,18 @@ export default function AdminNewsletterPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+      return;
+    }
+
+    if (status === 'authenticated') {
+      fetchNewsletters();
+    }
+  }, [status, page, router, fetchNewsletters]);
 
   const handleTogglePublish = async (id: string) => {
     try {

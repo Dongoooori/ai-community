@@ -1,31 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-utils';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { categories, appItems } from '@/lib/db/schema';
+import { eq, and } from 'drizzle-orm';
 
 // PUT: 아이템 수정
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; itemId: string } }
+  { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    if (!session?.user || !(session.user as { id: string }).id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { name, url, iconUrl } = await request.json();
+    const { id, itemId } = await params;
 
     // 카테고리가 사용자 소유인지 확인
-    const category = await prisma.category.findFirst({
-      where: {
-        id: params.id,
-        userId: session.user.id,
-      },
-    });
+    const category = await db
+      .select()
+      .from(categories)
+      .where(
+        and(
+          eq(categories.id, id),
+          eq(categories.userId, (session.user as { id: string }).id)
+        )
+      )
+      .limit(1);
 
-    if (!category) {
+    if (category.length === 0) {
       return NextResponse.json(
         { error: 'Category not found' },
         { status: 404 }
@@ -37,13 +44,25 @@ export async function PUT(
     if (url !== undefined) updateData.url = url.trim();
     if (iconUrl !== undefined) updateData.iconUrl = iconUrl?.trim() || null;
 
-    const item = await prisma.appItem.update({
-      where: {
-        id: params.itemId,
-        categoryId: params.id,
-      },
-      data: updateData,
-    });
+    const [updatedItem] = await db
+      .update(appItems)
+      .set(updateData)
+      .where(
+        and(
+          eq(appItems.id, itemId),
+          eq(appItems.categoryId, id)
+        )
+      )
+      .returning();
+
+    if (!updatedItem) {
+      return NextResponse.json(
+        { error: 'Item not found' },
+        { status: 404 }
+      );
+    }
+
+    const item = updatedItem;
 
     return NextResponse.json({ item });
   } catch (error) {
@@ -58,36 +77,52 @@ export async function PUT(
 // DELETE: 아이템 삭제
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; itemId: string } }
+  { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    if (!session?.user || !(session.user as { id: string }).id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 카테고리가 사용자 소유인지 확인
-    const category = await prisma.category.findFirst({
-      where: {
-        id: params.id,
-        userId: session.user.id,
-      },
-    });
+    const { id, itemId } = await params;
 
-    if (!category) {
+    // 카테고리가 사용자 소유인지 확인
+    const category = await db
+      .select()
+      .from(categories)
+      .where(
+        and(
+          eq(categories.id, id),
+          eq(categories.userId, (session.user as { id: string }).id)
+        )
+      )
+      .limit(1);
+
+    if (category.length === 0) {
       return NextResponse.json(
         { error: 'Category not found' },
         { status: 404 }
       );
     }
 
-    await prisma.appItem.delete({
-      where: {
-        id: params.itemId,
-        categoryId: params.id,
-      },
-    });
+    const deletedItem = await db
+      .delete(appItems)
+      .where(
+        and(
+          eq(appItems.id, itemId),
+          eq(appItems.categoryId, id)
+        )
+      )
+      .returning();
+
+    if (deletedItem.length === 0) {
+      return NextResponse.json(
+        { error: 'Item not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

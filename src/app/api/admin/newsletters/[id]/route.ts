@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { newsletters, users } from '@/lib/db/schema';
 import { requireAdmin } from '@/lib/auth-utils';
+import { eq } from 'drizzle-orm';
 
 // GET /api/admin/newsletters/[id] - 개별 뉴스레터 조회 (관리자용)
 export async function GET(
@@ -11,25 +13,37 @@ export async function GET(
     await requireAdmin();
     const { id } = await params;
 
-    const newsletter = await prisma.newsletter.findUnique({
-      where: { id },
-      include: {
+    const newsletterData = await db
+      .select({
+        id: newsletters.id,
+        title: newsletters.title,
+        content: newsletters.content,
+        thumbnail: newsletters.thumbnail,
+        authorId: newsletters.authorId,
+        published: newsletters.published,
+        views: newsletters.views,
+        createdAt: newsletters.createdAt,
+        updatedAt: newsletters.updatedAt,
+        publishedAt: newsletters.publishedAt,
         author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
+          id: users.id,
+          name: users.name,
+          image: users.image,
         },
-      },
-    });
+      })
+      .from(newsletters)
+      .leftJoin(users, eq(newsletters.authorId, users.id))
+      .where(eq(newsletters.id, id))
+      .limit(1);
 
-    if (!newsletter) {
+    if (newsletterData.length === 0) {
       return NextResponse.json(
         { error: 'Newsletter not found' },
         { status: 404 }
       );
     }
+
+    const newsletter = newsletterData[0];
 
     return NextResponse.json(newsletter);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,16 +78,20 @@ export async function PUT(
     const { title, content, published } = body;
 
     // 기존 뉴스레터 확인
-    const existingNewsletter = await prisma.newsletter.findUnique({
-      where: { id },
-    });
+    const existingNewsletterData = await db
+      .select()
+      .from(newsletters)
+      .where(eq(newsletters.id, id))
+      .limit(1);
 
-    if (!existingNewsletter) {
+    if (existingNewsletterData.length === 0) {
       return NextResponse.json(
         { error: 'Newsletter not found' },
         { status: 404 }
       );
     }
+
+    const existingNewsletter = existingNewsletterData[0];
 
     // 발행 상태가 변경되면 publishedAt 업데이트
     const publishedAt =
@@ -81,24 +99,32 @@ export async function PUT(
         ? new Date()
         : existingNewsletter.publishedAt;
 
-    const newsletter = await prisma.newsletter.update({
-      where: { id },
-      data: {
+    const [updatedNewsletter] = await db
+      .update(newsletters)
+      .set({
         title,
         content,
         published,
         publishedAt,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-      },
-    });
+      })
+      .where(eq(newsletters.id, id))
+      .returning();
+
+    // 작성자 정보도 가져오기
+    const authorData = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        image: users.image,
+      })
+      .from(users)
+      .where(eq(users.id, updatedNewsletter.authorId))
+      .limit(1);
+
+    const newsletter = {
+      ...updatedNewsletter,
+      author: authorData[0],
+    };
 
     return NextResponse.json(newsletter);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -129,9 +155,9 @@ export async function DELETE(
     await requireAdmin();
     const { id } = await params;
 
-    await prisma.newsletter.delete({
-      where: { id },
-    });
+    await db
+      .delete(newsletters)
+      .where(eq(newsletters.id, id));
 
     return NextResponse.json({ success: true });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

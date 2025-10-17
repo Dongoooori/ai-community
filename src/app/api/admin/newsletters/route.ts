@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { newsletters, users } from '@/lib/db/schema';
 import { requireAdmin } from '@/lib/auth-utils';
+import { desc, count, eq } from 'drizzle-orm';
 
 // GET /api/admin/newsletters - 모든 뉴스레터 목록 (관리자용)
 export async function GET(request: NextRequest) {
@@ -12,28 +14,39 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
 
-    const [newsletters, total] = await Promise.all([
-      prisma.newsletter.findMany({
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
+    const newslettersData: any[] = await db
+      .select({
+        id: newsletters.id,
+        title: newsletters.title,
+        content: newsletters.content,
+        thumbnail: newsletters.thumbnail,
+        authorId: newsletters.authorId,
+        published: newsletters.published,
+        views: newsletters.views,
+        createdAt: newsletters.createdAt,
+        updatedAt: newsletters.updatedAt,
+        publishedAt: newsletters.publishedAt,
+        author: {
+          id: users.id,
+          name: users.name,
+          image: users.image,
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        skip,
-        take: limit,
-      }),
-      prisma.newsletter.count(),
-    ]);
+      })
+      .from(newsletters)
+      .leftJoin(users, eq(newsletters.authorId, users.id))
+      .orderBy(desc(newsletters.createdAt))
+      .limit(limit)
+      .offset(skip);
+
+    const totalResult = await db
+      .select({ count: count() })
+      .from(newsletters);
+
+    const total = totalResult[0]?.count || 0;
+    const newslettersList = newslettersData;
 
     return NextResponse.json({
-      newsletters,
+      newsletters: newslettersList,
       pagination: {
         page,
         limit,
@@ -41,14 +54,14 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit),
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching newsletters:', error);
     
-    if (error.message === 'Unauthorized') {
+    if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    if (error.message.includes('Forbidden')) {
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -74,34 +87,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newsletter = await prisma.newsletter.create({
-      data: {
+    const [newNewsletter] = await db
+      .insert(newsletters)
+      .values({
         title,
         content,
         published: published || false,
         publishedAt: published ? new Date() : null,
         authorId: user.id,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-      },
-    });
+      })
+      .returning();
+
+    // 작성자 정보도 가져오기
+    const authorData = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        image: users.image,
+      })
+      .from(users)
+      .where(eq(users.id, user.id))
+      .limit(1);
+
+    const newsletter = {
+      ...newNewsletter,
+      author: authorData[0],
+    };
 
     return NextResponse.json(newsletter, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating newsletter:', error);
     
-    if (error.message === 'Unauthorized') {
+    if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    if (error.message.includes('Forbidden')) {
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

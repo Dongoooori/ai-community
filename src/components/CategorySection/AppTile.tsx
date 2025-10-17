@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import Image from 'next/image';
 import type { AppItem } from '@/types';
 
 interface AppTileProps {
@@ -39,9 +40,11 @@ export function AppTile({ item, onEdit, onDelete }: AppTileProps) {
     >
       <div className="w-20 h-20 bg-gray-800 rounded-xl flex flex-col items-center justify-center hover:bg-gray-700 transition-colors duration-200 border border-gray-700 hover:border-gray-600">
         {item.iconUrl ? (
-          <img
+          <Image
             src={item.iconUrl}
             alt={item.name}
+            width={40}
+            height={40}
             className="w-10 h-10 rounded-lg object-cover"
             onError={(e) => {
               // 이미지 로드 실패 시 기본 아이콘 표시

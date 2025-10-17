@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { newsletters, users } from '@/lib/db/schema';
+import { eq, and } from 'drizzle-orm';
 
 // GET /api/newsletters/[id] - 개별 뉴스레터 조회
 export async function GET(
@@ -9,34 +11,48 @@ export async function GET(
   try {
     const { id } = await params;
     
-    const newsletter = await prisma.newsletter.findUnique({
-      where: {
-        id,
-        published: true,
-      },
-      include: {
+    const newsletterData = await db
+      .select({
+        id: newsletters.id,
+        title: newsletters.title,
+        content: newsletters.content,
+        thumbnail: newsletters.thumbnail,
+        authorId: newsletters.authorId,
+        published: newsletters.published,
+        views: newsletters.views,
+        createdAt: newsletters.createdAt,
+        updatedAt: newsletters.updatedAt,
+        publishedAt: newsletters.publishedAt,
         author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
+          id: users.id,
+          name: users.name,
+          image: users.image,
         },
-      },
-    });
+      })
+      .from(newsletters)
+      .leftJoin(users, eq(newsletters.authorId, users.id))
+      .where(
+        and(
+          eq(newsletters.id, id),
+          eq(newsletters.published, true)
+        )
+      )
+      .limit(1);
 
-    if (!newsletter) {
+    if (newsletterData.length === 0) {
       return NextResponse.json(
         { error: 'Newsletter not found' },
         { status: 404 }
       );
     }
 
+    const newsletter = newsletterData[0];
+
     // 조회수 증가
-    await prisma.newsletter.update({
-      where: { id },
-      data: { views: { increment: 1 } },
-    });
+    await db
+      .update(newsletters)
+      .set({ views: newsletter.views + 1 })
+      .where(eq(newsletters.id, id));
 
     return NextResponse.json(newsletter);
   } catch (error) {

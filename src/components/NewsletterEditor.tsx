@@ -14,14 +14,16 @@ interface NewsletterEditorProps {
   initialData?: {
     title: string;
     content: string;
+    thumbnail?: string;
   };
-  onSave: (data: { title: string; content: string; published: boolean }) => Promise<void>;
+  onSave: (data: { title: string; content: string; thumbnail?: string; published: boolean }) => Promise<void>;
   onCancel: () => void;
 }
 
 export default function NewsletterEditor({ initialData, onSave, onCancel }: NewsletterEditorProps) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [content, setContent] = useState(initialData?.content || '');
+  const [thumbnail, setThumbnail] = useState(initialData?.thumbnail || '');
   const [saving, setSaving] = useState(false);
 
   const handleSave = async (published: boolean) => {
@@ -32,7 +34,7 @@ export default function NewsletterEditor({ initialData, onSave, onCancel }: News
 
     setSaving(true);
     try {
-      await onSave({ title, content, published });
+      await onSave({ title, content, thumbnail, published });
     } catch (error) {
       console.error('Error saving newsletter:', error);
       alert('저장에 실패했습니다.');
@@ -54,6 +56,21 @@ export default function NewsletterEditor({ initialData, onSave, onCancel }: News
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="뉴스레터 제목을 입력하세요"
+          className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
+      {/* 썸네일 입력 */}
+      <div>
+        <label htmlFor="thumbnail" className="block text-sm font-medium text-foreground mb-2">
+          썸네일 URL (선택사항)
+        </label>
+        <input
+          id="thumbnail"
+          type="url"
+          value={thumbnail}
+          onChange={(e) => setThumbnail(e.target.value)}
+          placeholder="썸네일 이미지 URL을 입력하세요"
           className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>

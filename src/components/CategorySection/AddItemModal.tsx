@@ -30,7 +30,7 @@ export function AddItemModal({ isOpen, onClose, onAdd, categoryId, categoryTitle
       await onAdd(categoryId, {
         name: formData.name.trim(),
         url: formData.url.trim(),
-        iconUrl: formData.iconUrl.trim() || undefined,
+        iconUrl: formData.iconUrl?.trim() || undefined,
       });
       
       // 폼 리셋
@@ -39,7 +39,7 @@ export function AddItemModal({ isOpen, onClose, onAdd, categoryId, categoryTitle
         url: '',
         iconUrl: '',
       });
-    } catch (error) {
+    } catch {
       // 에러는 상위 컴포넌트에서 처리
     } finally {
       setIsSubmitting(false);

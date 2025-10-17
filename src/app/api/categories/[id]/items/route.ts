@@ -1,21 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-utils';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { categories, appItems } from '@/lib/db/schema';
+import { eq, and, count } from 'drizzle-orm';
 
 // POST: 카테고리에 새 아이템 추가
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    if (!session?.user || !(session.user as { id: string }).id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { name, url, iconUrl } = await request.json();
+    const { id } = await params;
 
     if (!name || !url || typeof name !== 'string' || typeof url !== 'string') {
       return NextResponse.json(
@@ -25,14 +28,18 @@ export async function POST(
     }
 
     // 카테고리가 사용자 소유인지 확인
-    const category = await prisma.category.findFirst({
-      where: {
-        id: params.id,
-        userId: session.user.id,
-      },
-    });
+    const category = await db
+      .select()
+      .from(categories)
+      .where(
+        and(
+          eq(categories.id, id),
+          eq(categories.userId, (session.user as { id: string }).id)
+        )
+      )
+      .limit(1);
 
-    if (!category) {
+    if (category.length === 0) {
       return NextResponse.json(
         { error: 'Category not found' },
         { status: 404 }
@@ -40,21 +47,25 @@ export async function POST(
     }
 
     // 현재 카테고리의 아이템 개수 확인하여 order 설정
-    const itemCount = await prisma.appItem.count({
-      where: {
-        categoryId: params.id,
-      },
-    });
+    const itemCountResult = await db
+      .select({ count: count() })
+      .from(appItems)
+      .where(eq(appItems.categoryId, id));
 
-    const item = await prisma.appItem.create({
-      data: {
+    const itemCount = itemCountResult[0]?.count || 0;
+
+    const [newItem] = await db
+      .insert(appItems)
+      .values({
         name: name.trim(),
         url: url.trim(),
         iconUrl: iconUrl?.trim() || null,
         order: itemCount,
-        categoryId: params.id,
-      },
-    });
+        categoryId: id,
+      })
+      .returning();
+
+    const item = newItem;
 
     return NextResponse.json({ item }, { status: 201 });
   } catch (error) {

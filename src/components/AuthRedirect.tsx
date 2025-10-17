@@ -9,7 +9,7 @@ import { useEffect } from 'react';
  * SSG 페이지에서 클라이언트 사이드 인증 체크를 위해 사용
  */
 export default function AuthRedirect() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
 
   useEffect(() => {

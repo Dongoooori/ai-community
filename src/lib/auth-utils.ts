@@ -1,12 +1,14 @@
 import { getServerSession } from 'next-auth';
-import { prisma } from './prisma';
+import { db } from './db';
+import { users } from './db/schema';
 import { NextAuthOptions } from 'next-auth';
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import { eq } from 'drizzle-orm';
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: DrizzleAdapter(db),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -25,20 +27,27 @@ export const authOptions: NextAuthOptions = {
             async authorize(credentials) {
               // 개발 환경에서만 작동하는 테스트 로그인
               if (credentials?.email && credentials?.name) {
-                // Prisma에서 사용자 찾기 또는 생성
-                let user = await prisma.user.findUnique({
-                  where: { email: credentials.email },
-                })
+                // Drizzle에서 사용자 찾기 또는 생성
+                const existingUser = await db
+                  .select()
+                  .from(users)
+                  .where(eq(users.email, credentials.email))
+                  .limit(1);
 
-                if (!user) {
-                  user = await prisma.user.create({
-                    data: {
+                let user;
+                if (existingUser.length === 0) {
+                  const [newUser] = await db
+                    .insert(users)
+                    .values({
                       email: credentials.email,
                       name: credentials.name,
                       image: `https://ui-avatars.com/api/?name=${encodeURIComponent(credentials.name)}&background=random`,
                       role: "USER",
-                    },
-                  })
+                    })
+                    .returning();
+                  user = newUser;
+                } else {
+                  user = existingUser[0];
                 }
 
                 return {
@@ -91,10 +100,13 @@ export const authOptions: NextAuthOptions = {
         token.picture = user.image
         
         // DB에서 role 가져오기
-        const dbUser = await prisma.user.findUnique({
-          where: { email: user.email as string },
-          select: { role: true },
-        })
+        const dbUserData = await db
+          .select({ role: users.role })
+          .from(users)
+          .where(eq(users.email, user.email as string))
+          .limit(1);
+        
+        const dbUser = dbUserData[0];
         token.role = dbUser?.role || "USER"
       }
       return token
@@ -123,16 +135,19 @@ export async function getCurrentUser() {
     return null;
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      image: true,
-      role: true,
-    },
-  });
+  const userData = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      image: users.image,
+      role: users.role,
+    })
+    .from(users)
+    .where(eq(users.email, session.user.email as string))
+    .limit(1);
+  
+  const user = userData[0];
 
   return user;
 }

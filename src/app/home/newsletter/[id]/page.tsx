@@ -2,7 +2,7 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
 import Loading from '@/components/Loading';
 import Image from 'next/image';
@@ -29,18 +29,7 @@ export default function NewsletterDetailPage() {
   const [newsletter, setNewsletter] = useState<Newsletter | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
-      return;
-    }
-
-    if (status === 'authenticated') {
-      fetchNewsletter();
-    }
-  }, [status, router]);
-
-  const fetchNewsletter = async () => {
+  const fetchNewsletter = useCallback(async () => {
     try {
       const response = await fetch(`/api/newsletters/${params.id}`);
       if (!response.ok) {
@@ -55,7 +44,19 @@ export default function NewsletterDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, router]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+      return;
+    }
+
+    if (status === 'authenticated') {
+      fetchNewsletter();
+    }
+  }, [status, router, fetchNewsletter]);
+
 
   // HTML 콘텐츠를 안전하게 렌더링
   const renderContent = (content: string) => {

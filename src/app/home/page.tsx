@@ -228,7 +228,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
 
         {/* 텍스트 콘텐츠 - 왼쪽 절반 */}
-        <div className="absolute left-0 top-0 w-1/2 h-full flex flex-col justify-center px-12 z-10">
+        <div className="absolute left-0 top-0 w-2/3 h-full flex flex-col justify-center px-12 z-10">
           {newsletters.length === 0 ? (
             <div className="text-center">
               <p className="text-white text-lg">

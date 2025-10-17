@@ -1,21 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-utils';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { categories, appItems } from '@/lib/db/schema';
+import { eq, and, asc } from 'drizzle-orm';
 
 // PUT: 카테고리 수정
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    if (!session?.user || !(session.user as { id: string }).id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { title } = await request.json();
+    const { id } = await params;
 
     if (!title || typeof title !== 'string') {
       return NextResponse.json(
@@ -24,22 +27,37 @@ export async function PUT(
       );
     }
 
-    const category = await prisma.category.update({
-      where: {
-        id: params.id,
-        userId: session.user.id, // 사용자 소유 확인
-      },
-      data: {
+    const [updatedCategory] = await db
+      .update(categories)
+      .set({
         title: title.trim(),
-      },
-      include: {
-        items: {
-          orderBy: {
-            order: 'asc',
-          },
-        },
-      },
-    });
+      })
+      .where(
+        and(
+          eq(categories.id, id),
+          eq(categories.userId, (session.user as { id: string }).id)
+        )
+      )
+      .returning();
+
+    if (!updatedCategory) {
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 404 }
+      );
+    }
+
+    // 카테고리의 아이템들도 가져오기
+    const items = await db
+      .select()
+      .from(appItems)
+      .where(eq(appItems.categoryId, id))
+      .orderBy(asc(appItems.order));
+
+    const category = {
+      ...updatedCategory,
+      items,
+    };
 
     return NextResponse.json({ category });
   } catch (error) {
@@ -54,21 +72,33 @@ export async function PUT(
 // DELETE: 카테고리 삭제
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    if (!session?.user || !(session.user as { id: string }).id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await prisma.category.delete({
-      where: {
-        id: params.id,
-        userId: session.user.id, // 사용자 소유 확인
-      },
-    });
+    const { id } = await params;
+    
+    const deletedCategory = await db
+      .delete(categories)
+      .where(
+        and(
+          eq(categories.id, id),
+          eq(categories.userId, (session.user as { id: string }).id)
+        )
+      )
+      .returning();
+
+    if (deletedCategory.length === 0) {
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
