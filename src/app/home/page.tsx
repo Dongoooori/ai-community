@@ -2,11 +2,14 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Layout from '@/components/Layout';
 import Loading from '@/components/Loading';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import CategorySection from '@/components/CategorySection';
+import { useCategories } from '@/hooks/useCategories';
+import type { CategoryId, AddItemFormData, AppItem } from '@/types';
 
 interface Newsletter {
   id: string;
@@ -30,36 +33,99 @@ export default function HomePage() {
   const [totalPages, setTotalPages] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // 로그인하지 않은 사용자는 로그인 페이지로 리다이렉트
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
+  const { categories, addItem, updateItem, deleteItem, reorderItems, addCategory, updateCategory, deleteCategory } = useCategories();
+  const [toasts, setToasts] = useState<Array<{ id: string; message: string; type: 'success' | 'error' }>>([]);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+  // 토스트 알림 함수들
+  const success = (message: string) => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { id, message, type: 'success' }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 3000);
+  };
+
+  const error = (message: string) => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { id, message, type: 'error' }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 3000);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
+
+  const handleAddItem = async (categoryId: CategoryId, item: AddItemFormData) => {
+    try {
+      await addItem(categoryId, item);
+      success('추가되었습니다');
+    } catch (err) {
+      error(err instanceof Error ? err.message : '추가에 실패했습니다');
+      throw err; // Re-throw to let modal handle it
     }
-  }, [status, router]);
+  };
 
-  // 뉴스레터 목록 가져오기
-  useEffect(() => {
-    if (status === 'authenticated') {
-      fetchNewsletters();
+  const handleUpdateItem = async (categoryId: CategoryId, itemId: string, updates: Partial<AppItem>) => {
+    try {
+      await updateItem(categoryId, itemId, updates);
+      success('수정되었습니다');
+    } catch (err) {
+      error(err instanceof Error ? err.message : '수정에 실패했습니다');
     }
-  }, [status, page]);
+  };
 
-  // 현재 뉴스레터 인덱스가 변경될 때 페이지 로드
-  useEffect(() => {
-    if (newsletters.length > 0 && currentIndex >= newsletters.length) {
-      // 현재 페이지의 마지막 뉴스레터에 도달하면 다음 페이지 로드
-      if (page < totalPages) {
-        setPage(page + 1);
-        setCurrentIndex(0);
-      } else {
-        // 마지막 페이지의 마지막 뉴스레터면 첫 번째로 돌아가기
-        setCurrentIndex(0);
-      }
+  const handleDeleteItem = async (categoryId: CategoryId, itemId: string) => {
+    try {
+      await deleteItem(categoryId, itemId);
+      success('삭제되었습니다');
+    } catch (err) {
+      error(err instanceof Error ? err.message : '삭제에 실패했습니다');
     }
-  }, [currentIndex, newsletters.length, page, totalPages]);
+  };
+
+  const handleReorderItems = async (categoryId: CategoryId, fromIndex: number, toIndex: number) => {
+    try {
+      await reorderItems(categoryId, fromIndex, toIndex);
+      success('순서가 변경되었습니다');
+    } catch (err) {
+      error(err instanceof Error ? err.message : '순서 변경에 실패했습니다');
+    }
+  };
+
+  const handleAddCategory = async (title: string) => {
+    try {
+      await addCategory(title);
+      success('카테고리가 추가되었습니다');
+      setIsCategoryModalOpen(false);
+    } catch (err) {
+      error(err instanceof Error ? err.message : '카테고리 추가에 실패했습니다');
+      throw err; // Re-throw to let modal handle it
+    }
+  };
+
+  const handleUpdateCategory = async (categoryId: CategoryId, title: string) => {
+    try {
+      await updateCategory(categoryId, title);
+      success('카테고리가 수정되었습니다');
+    } catch (err) {
+      error(err instanceof Error ? err.message : '카테고리 수정에 실패했습니다');
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: CategoryId) => {
+    try {
+      await deleteCategory(categoryId);
+      success('카테고리가 삭제되었습니다');
+    } catch (err) {
+      error(err instanceof Error ? err.message : '카테고리 삭제에 실패했습니다');
+    }
+  };
 
 
-  const fetchNewsletters = async () => {
+  const fetchNewsletters = useCallback(async () => {
     try {
       const response = await fetch(`/api/newsletters?page=${page}&limit=12`);
       if (!response.ok) {
@@ -75,7 +141,35 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
+
+  // 로그인하지 않은 사용자는 로그인 페이지로 리다이렉트
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+    }
+  }, [status, router]);
+
+  // 뉴스레터 목록 가져오기
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchNewsletters();
+    }
+  }, [status, page, fetchNewsletters]);
+
+  // 현재 뉴스레터 인덱스가 변경될 때 페이지 로드
+  useEffect(() => {
+    if (newsletters.length > 0 && currentIndex >= newsletters.length) {
+      // 현재 페이지의 마지막 뉴스레터에 도달하면 다음 페이지 로드
+      if (page < totalPages) {
+        setPage(page + 1);
+        setCurrentIndex(0);
+      } else {
+        // 마지막 페이지의 마지막 뉴스레터면 첫 번째로 돌아가기
+        setCurrentIndex(0);
+      }
+    }
+  }, [currentIndex, newsletters.length, page, totalPages]);
 
   // 네비게이션 함수들
   const goToPrevious = () => {
@@ -204,6 +298,124 @@ export default function HomePage() {
             </button>
           </div>
         )}
+      </div>
+      
+      {/* 카테고리 섹션 */}
+      <div className="min-h-screen py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-bold text-white">내 앱 컬렉션</h1>
+            <Button
+              onClick={() => setIsCategoryModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              + 새 카테고리 추가
+            </Button>
+          </div>
+          
+          {categories.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg mb-4">아직 카테고리가 없습니다.</p>
+              <Button
+                onClick={() => setIsCategoryModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                첫 번째 카테고리 만들기
+              </Button>
+            </div>
+          ) : (
+            categories.map((category) => (
+              <CategorySection
+                key={category.id}
+                category={category}
+                onAddItem={handleAddItem}
+                onUpdateItem={handleUpdateItem}
+                onDeleteItem={handleDeleteItem}
+                onReorderItems={handleReorderItems}
+                onUpdateCategory={handleUpdateCategory}
+                onDeleteCategory={handleDeleteCategory}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* 카테고리 추가 모달 */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white">새 카테고리 추가</h2>
+              <button
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const title = formData.get('title') as string;
+              if (title?.trim()) {
+                try {
+                  await handleAddCategory(title.trim());
+                } catch {
+                  // 에러는 handleAddCategory에서 처리됨
+                }
+              }
+            }}>
+              <input
+                type="text"
+                name="title"
+                placeholder="카테고리 이름을 입력하세요"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+                required
+              />
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                  className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  추가
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 토스트 알림 */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`px-4 py-2 rounded-md shadow-lg flex items-center justify-between min-w-64 ${
+              toast.type === 'success' 
+                ? 'bg-green-600 text-white' 
+                : 'bg-red-600 text-white'
+            }`}
+          >
+            <span>{toast.message}</span>
+            <button
+              onClick={() => removeToast(toast.id)}
+              className="ml-2 text-white/80 hover:text-white"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        ))}
       </div>
     </Layout>
   );

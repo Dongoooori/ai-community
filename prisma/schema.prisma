@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NextAuth.js 모델들
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -21,8 +20,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -42,11 +40,12 @@ model User {
   emailVerified DateTime?
   image         String?
   role          Role         @default(USER)
-  accounts      Account[]
-  sessions      Session[]
-  newsletters   Newsletter[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  accounts      Account[]
+  categories    Category[]
+  newsletters   Newsletter[]
+  sessions      Session[]
 }
 
 model VerificationToken {
@@ -57,25 +56,50 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// 뉴스레터 모델
 model Newsletter {
   id          String    @id @default(cuid())
   title       String
-  content     String    @db.Text
+  content     String
   thumbnail   String?
-  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId    String
   published   Boolean   @default(false)
   views       Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([published, publishedAt])
   @@index([authorId])
 }
 
-// 사용자 역할
+model Category {
+  id        String    @id @default(cuid())
+  title     String
+  order     Int       @default(0)
+  userId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  items     AppItem[]
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AppItem {
+  id         String   @id @default(cuid())
+  name       String
+  url        String
+  iconUrl    String?
+  order      Int      @default(0)
+  categoryId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+}
+
 enum Role {
   USER
   ADMIN
