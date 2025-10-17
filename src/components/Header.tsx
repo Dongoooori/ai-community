@@ -16,7 +16,8 @@ export default function Header() {
 
   const handleLogoClick = useCallback(() => {
     if(session) {
-      router.push('/home');
+      // TODO: 로그인 성공 후 홈 페이지로 리다이렉트
+      router.push('/');
     } else {
       router.push('/');
     }
@@ -24,7 +25,8 @@ export default function Header() {
 
   const handleLogin = useCallback(() => {
     if(session) {
-      router.push('/home');
+      // TODO: 로그인 성공 후 홈 페이지로 리다이렉트
+      router.push('/');
     } else {
       router.push('/auth/signin');
     }

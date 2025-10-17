@@ -8,7 +8,8 @@ export default function SignIn() {
   const { data: session, status } = useSession()
 
   const handleGoogleSignIn = useCallback(() => {
-    signIn("google", { callbackUrl: "/home" })
+    // TODO: 로그인 성공 후 로그인 페이지로 리다이렉트
+    signIn("google", { callbackUrl: "/" })
   }, [])
 
   const handleSignOut = useCallback(() => {

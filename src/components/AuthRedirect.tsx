@@ -14,7 +14,8 @@ export default function AuthRedirect() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/home');
+      // TODO: 로그인 성공 후 홈 페이지로 리다이렉트
+      router.push('/');
     }
   }, [status, router]);
 
